@@ -45,8 +45,32 @@ class BusAssignmentController extends Controller
             $morningBuses = Bus::morning()->orderBy('name')->get();
             $regularBuses = Bus::regular()->orderBy('name')->get();
 
-            $performParticipants = Participant::perform()->orderBy('name')->get();
-            $umumParticipants = Participant::umum()->orderBy('name')->get();
+            // IMPORTANT: Only include participants WITH guardian_name
+            // Children without guardian cannot be assigned until guardian info is saved
+            $performParticipants = Participant::perform()
+                ->whereNotNull('guardian_name')
+                ->where('guardian_name', '!=', '')
+                ->orderBy('name')
+                ->get();
+            
+            $umumParticipants = Participant::umum()
+                ->whereNotNull('guardian_name')
+                ->where('guardian_name', '!=', '')
+                ->orderBy('name')
+                ->get();
+
+            // Count skipped participants
+            $skippedPerform = Participant::perform()
+                ->where(function($q) {
+                    $q->whereNull('guardian_name')->orWhere('guardian_name', '');
+                })->count();
+            
+            $skippedUmum = Participant::umum()
+                ->where(function($q) {
+                    $q->whereNull('guardian_name')->orWhere('guardian_name', '');
+                })->count();
+            
+            $totalSkipped = $skippedPerform + $skippedUmum;
 
             // Group by guardian and fill buses
             $this->fillBusesWithFamilyGroups(
@@ -64,10 +88,15 @@ class BusAssignmentController extends Controller
             DB::commit();
 
             $totalAssigned = BusAssignment::count();
-            ActivityLog::log('auto_assign', "Pengelompokan otomatis: {$totalAssigned} penumpang ditempatkan");
+            ActivityLog::log('auto_assign', "Pengelompokan otomatis: {$totalAssigned} penumpang ditempatkan, {$totalSkipped} ditunda (belum ada pendamping)");
+
+            $message = "Pengelompokan otomatis berhasil! {$totalAssigned} penumpang ditempatkan.";
+            if ($totalSkipped > 0) {
+                $message .= " {$totalSkipped} anak belum diassign karena pendamping belum terdaftar.";
+            }
 
             return redirect()->route('assignments.index')
-                ->with('success', 'Pengelompokan otomatis berhasil! Keluarga dengan pendamping yang sama ditempatkan di bis yang sama.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
