@@ -1,0 +1,58 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BusAssignmentController;
+use App\Http\Controllers\BusController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\ParticipantController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// Auth Routes (Guest only)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+});
+
+// Protected Routes (Authenticated users)
+Route::middleware('auth')->group(function () {
+    // Logout
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Dashboard
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Participants
+    Route::get('/participants', [ParticipantController::class, 'index'])->name('participants.index');
+    Route::get('/participants/create', [ParticipantController::class, 'create'])->name('participants.create');
+    Route::post('/participants', [ParticipantController::class, 'store'])->name('participants.store');
+    Route::get('/participants/{participant}/edit', [ParticipantController::class, 'edit'])->name('participants.edit');
+    Route::put('/participants/{participant}', [ParticipantController::class, 'update'])->name('participants.update');
+    Route::delete('/participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
+    Route::post('/participants/import', [ParticipantController::class, 'import'])->name('participants.import');
+
+    // Buses
+    Route::get('/buses', [BusController::class, 'index'])->name('buses.index');
+    Route::post('/buses', [BusController::class, 'store'])->name('buses.store');
+    Route::get('/buses/{bus}', [BusController::class, 'show'])->name('buses.show');
+    Route::put('/buses/{bus}', [BusController::class, 'update'])->name('buses.update');
+    Route::delete('/buses/{bus}', [BusController::class, 'destroy'])->name('buses.destroy');
+    Route::post('/buses/default-capacity', [BusController::class, 'updateDefaultCapacity'])->name('buses.default-capacity');
+
+    // Assignments
+    Route::get('/assignments', [BusAssignmentController::class, 'index'])->name('assignments.index');
+    Route::post('/assignments/auto', [BusAssignmentController::class, 'autoAssign'])->name('assignments.auto');
+    Route::post('/assignments/manual', [BusAssignmentController::class, 'manualAssign'])->name('assignments.manual');
+    Route::delete('/assignments/{assignment}', [BusAssignmentController::class, 'removeAssignment'])->name('assignments.remove');
+    Route::post('/assignments/reset', [BusAssignmentController::class, 'reset'])->name('assignments.reset');
+    Route::get('/assignments/export', [BusAssignmentController::class, 'export'])->name('assignments.export');
+
+    // Activity Logs (Admin only - checked in controller)
+    Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+});
