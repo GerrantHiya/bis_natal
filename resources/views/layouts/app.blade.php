@@ -128,6 +128,13 @@
                     </svg>
                     Activity Log
                 </a>
+                <a href="{{ route('users.index') }}" 
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    Manajemen User
+                </a>
                 @endif
             </nav>
             
@@ -148,15 +155,24 @@
                             </p>
                         </div>
                     </div>
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="w-full text-sm bg-white/10 hover:bg-white/20 rounded-lg py-2 transition-colors flex items-center justify-center gap-2">
+                    <div class="space-y-2">
+                        <a href="{{ route('password.change') }}" 
+                           class="w-full text-sm bg-white/10 hover:bg-white/20 rounded-lg py-2 transition-colors flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
                             </svg>
-                            Logout
-                        </button>
-                    </form>
+                            Ubah Password
+                        </a>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-sm bg-white/10 hover:bg-white/20 rounded-lg py-2 transition-colors flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </aside>

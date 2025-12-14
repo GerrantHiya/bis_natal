@@ -105,9 +105,41 @@ class ParticipantController extends Controller
             $imported = 0;
             $skipped = 0;
 
-            foreach ($rows as $index => $row) {
-                if ($index === 0 || empty($row[1])) continue;
+            /*
+             * Expected Excel format (based on user's file):
+             * Row 1: Headers - No | Nama Lengkap Anak | No Whatsapp | Usia | Nama Orang Tua | Keterangan Lain
+             * Row 2: Date info (e.g., "minggu 16 november 2025") - SKIP THIS
+             * Row 3+: Actual data
+             * 
+             * Column mapping (0-indexed):
+             * [0] = No (skip)
+             * [1] = Nama Lengkap Anak
+             * [2] = No Whatsapp
+             * [3] = Usia
+             * [4] = Nama Orang Tua
+             * [5] = Keterangan Lain (category: umum, PERFORM, pribadi)
+             */
 
+            foreach ($rows as $index => $row) {
+                // Skip header row (index 0)
+                if ($index === 0) continue;
+                
+                // Skip if row[1] (nama) is empty - this catches date rows and empty rows
+                $nama = trim($row[1] ?? '');
+                if (empty($nama)) continue;
+                
+                // Skip if it looks like a date row (contains month names or "minggu")
+                $lowerNama = strtolower($nama);
+                if (str_contains($lowerNama, 'minggu') || 
+                    str_contains($lowerNama, 'senin') || 
+                    str_contains($lowerNama, 'selasa') ||
+                    str_contains($lowerNama, 'november') ||
+                    str_contains($lowerNama, 'desember') ||
+                    str_contains($lowerNama, 'januari')) {
+                    continue;
+                }
+
+                // Parse category from column F (index 5)
                 $categoryRaw = strtolower(trim($row[5] ?? 'umum'));
                 $category = 'umum';
                 if (str_contains($categoryRaw, 'perform')) {
@@ -116,21 +148,33 @@ class ParticipantController extends Controller
                     $category = 'pribadi';
                 }
 
+                // Get phone number - KEEP AS IS, just remove non-numeric characters
                 $phone = $row[2] ?? null;
                 if ($phone) {
+                    // Only keep digits, don't modify the number
                     $phone = preg_replace('/[^0-9]/', '', (string)$phone);
-                    if (strlen($phone) > 10) {
-                        $phone = '0' . substr($phone, -10);
+                    // If empty after cleaning, set to null
+                    if (empty($phone)) {
+                        $phone = null;
                     }
                 }
 
+                // Get age
+                $age = null;
+                if (isset($row[3]) && is_numeric($row[3])) {
+                    $age = (int)$row[3];
+                }
+
+                // Get guardian name
+                $guardianName = trim($row[4] ?? '');
+
                 try {
                     Participant::updateOrCreate(
-                        ['name' => trim($row[1])],
+                        ['name' => $nama],
                         [
                             'phone' => $phone,
-                            'age' => is_numeric($row[3]) ? (int)$row[3] : null,
-                            'guardian_name' => trim($row[4] ?? ''),
+                            'age' => $age,
+                            'guardian_name' => $guardianName,
                             'category' => $category,
                         ]
                     );

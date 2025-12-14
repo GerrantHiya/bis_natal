@@ -6,6 +6,7 @@ use App\Http\Controllers\BusController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ParticipantController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -55,4 +56,15 @@ Route::middleware('auth')->group(function () {
 
     // Activity Logs (Admin only - checked in controller)
     Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+
+    // User Management (Admin only - checked in controller)
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    Route::post('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
+
+    // Password Change (All users)
+    Route::get('/password/change', [UserController::class, 'showChangePassword'])->name('password.change');
+    Route::post('/password/change', [UserController::class, 'changePassword']);
 });
