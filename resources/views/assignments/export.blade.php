@@ -206,6 +206,7 @@
                             <th width="100">Tipe</th>
                             <th width="100">Kategori</th>
                             <th>Pendamping</th>
+                            <th>No. Telepon</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -232,6 +233,13 @@
                                 <td>
                                     @if(!$assignment->is_guardian && $assignment->participant)
                                         {{ $assignment->participant->guardian_name ?: '-' }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($assignment->participant && $assignment->participant->phone)
+                                        {{ $assignment->participant->phone }}
                                     @else
                                         -
                                     @endif
