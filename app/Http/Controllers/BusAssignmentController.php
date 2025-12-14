@@ -35,37 +35,30 @@ class BusAssignmentController extends Controller
     {
         $separatePerformGuardians = $request->boolean('separate_guardians', false);
         
-        // Save setting
         Setting::set('separate_perform_guardians', $separatePerformGuardians);
 
         try {
             DB::beginTransaction();
             
-            // Clear existing assignments using delete() instead of truncate()
             BusAssignment::query()->delete();
 
-            // Get all buses ordered by name
             $morningBuses = Bus::morning()->orderBy('name')->get();
             $regularBuses = Bus::regular()->orderBy('name')->get();
 
-            // Get participants by category (exclude PRIBADI)
             $performParticipants = Participant::perform()->orderBy('name')->get();
             $umumParticipants = Participant::umum()->orderBy('name')->get();
 
-            // === ASSIGN PERFORM PARTICIPANTS (06:00) ===
-            // Fill buses to FULL capacity before moving to next bus
-            $this->fillBusesToCapacity(
+            // Group by guardian and fill buses
+            $this->fillBusesWithFamilyGroups(
                 $performParticipants,
                 $morningBuses,
                 $separatePerformGuardians
             );
 
-            // === ASSIGN UMUM PARTICIPANTS (07:00) ===
-            // UMUM must always be with guardian (never separate)
-            $this->fillBusesToCapacity(
+            $this->fillBusesWithFamilyGroups(
                 $umumParticipants,
                 $regularBuses,
-                false // Never separate guardians for UMUM
+                false // UMUM never separate guardians
             );
 
             DB::commit();
@@ -74,7 +67,7 @@ class BusAssignmentController extends Controller
             ActivityLog::log('auto_assign', "Pengelompokan otomatis: {$totalAssigned} penumpang ditempatkan");
 
             return redirect()->route('assignments.index')
-                ->with('success', 'Pengelompokan otomatis berhasil! Bis diisi penuh sebelum pindah ke bis berikutnya.');
+                ->with('success', 'Pengelompokan otomatis berhasil! Keluarga dengan pendamping yang sama ditempatkan di bis yang sama.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -84,33 +77,44 @@ class BusAssignmentController extends Controller
     }
 
     /**
-     * Fill buses to FULL capacity before moving to the next bus.
-     * If not enough participants, remaining buses stay empty.
+     * Group participants by guardian (using phone or guardian_name), 
+     * then assign each family group to the same bus.
+     * 1 guardian can have multiple children.
      */
-    private function fillBusesToCapacity($participants, $buses, $separateGuardians)
+    private function fillBusesWithFamilyGroups($participants, $buses, $separateGuardians)
     {
         if ($buses->isEmpty() || $participants->isEmpty()) return;
+
+        // Step 1: Group participants by guardian
+        // Priority: phone number (if exists), then guardian_name
+        $familyGroups = $this->groupByGuardian($participants);
 
         $currentBusIndex = 0;
         $busCount = $buses->count();
         
-        // Track assignments per bus
         $busAssignments = [];
         foreach ($buses as $bus) {
             $busAssignments[$bus->id] = 0;
         }
 
-        // For separated guardians (PERFORM), we need to track them separately
+        // For separated guardians (PERFORM), track guardians to assign later
         $guardiansToAssignLater = collect();
 
-        foreach ($participants as $participant) {
-            // Calculate seats needed for this participant
-            $seatsNeeded = 1; // Child seat
-            if ($participant->hasGuardian() && !$separateGuardians) {
-                $seatsNeeded = 2; // Child + Guardian together
+        // Step 2: Assign each family group to a bus
+        foreach ($familyGroups as $group) {
+            $children = $group['children'];
+            $hasGuardian = $group['has_guardian'];
+            $guardianKey = $group['guardian_key'];
+            
+            // Calculate seats needed:
+            // - All children in this group
+            // - Plus 1 guardian (if they have one and not separating)
+            $seatsNeeded = $children->count();
+            if ($hasGuardian && !$separateGuardians) {
+                $seatsNeeded += 1; // Only 1 guardian for the entire group
             }
 
-            // Find the first bus with enough capacity
+            // Find a bus with enough capacity
             $assigned = false;
             $startIndex = $currentBusIndex;
             
@@ -119,86 +123,167 @@ class BusAssignmentController extends Controller
                 $remainingCapacity = $bus->capacity - $busAssignments[$bus->id];
 
                 if ($remainingCapacity >= $seatsNeeded) {
-                    // Assign child to this bus
-                    BusAssignment::create([
-                        'bus_id' => $bus->id,
-                        'participant_id' => $participant->id,
-                        'is_guardian' => false,
-                    ]);
-                    $busAssignments[$bus->id]++;
-
-                    // Assign guardian if not separating
-                    if ($participant->hasGuardian() && !$separateGuardians) {
+                    // Assign all children in this group to this bus
+                    foreach ($children as $child) {
                         BusAssignment::create([
                             'bus_id' => $bus->id,
-                            'participant_id' => $participant->id,
-                            'is_guardian' => true,
-                            'linked_participant_id' => $participant->id,
+                            'participant_id' => $child->id,
+                            'is_guardian' => false,
                         ]);
                         $busAssignments[$bus->id]++;
-                    } elseif ($participant->hasGuardian() && $separateGuardians) {
-                        // Track guardian to assign later
-                        $guardiansToAssignLater->push($participant);
+                    }
+
+                    // Assign guardian (only once for the whole group)
+                    if ($hasGuardian) {
+                        if (!$separateGuardians) {
+                            // Use first child as the linked participant for guardian
+                            $firstChild = $children->first();
+                            BusAssignment::create([
+                                'bus_id' => $bus->id,
+                                'participant_id' => $firstChild->id,
+                                'is_guardian' => true,
+                                'linked_participant_id' => $firstChild->id,
+                            ]);
+                            $busAssignments[$bus->id]++;
+                        } else {
+                            // Track guardian to assign later (for PERFORM)
+                            $guardiansToAssignLater->push([
+                                'guardian_key' => $guardianKey,
+                                'guardian_name' => $children->first()->guardian_name,
+                                'first_child_id' => $children->first()->id,
+                            ]);
+                        }
                     }
 
                     $assigned = true;
 
-                    // Check if current bus is now FULL, move to next bus
+                    // Move to next bus if current is full
                     if ($busAssignments[$bus->id] >= $bus->capacity) {
                         $currentBusIndex = ($currentBusIndex + 1) % $busCount;
                     }
                 } else {
-                    // Current bus can't fit, move to next bus
+                    // Move to next bus
                     $currentBusIndex = ($currentBusIndex + 1) % $busCount;
                     
-                    // If we've checked all buses and came back, all buses are full
                     if ($currentBusIndex == $startIndex) {
-                        break;
+                        break; // All buses checked
                     }
                 }
             } while (!$assigned && $currentBusIndex != $startIndex);
 
-            // If still not assigned (all buses full), force assign to first bus with any space
+            // Force assign if all buses are "full" but we still need to place
             if (!$assigned) {
                 foreach ($buses as $bus) {
-                    if ($busAssignments[$bus->id] < $bus->capacity) {
+                    // Assign children
+                    foreach ($children as $child) {
                         BusAssignment::create([
                             'bus_id' => $bus->id,
-                            'participant_id' => $participant->id,
+                            'participant_id' => $child->id,
                             'is_guardian' => false,
                         ]);
                         $busAssignments[$bus->id]++;
-                        
-                        if ($participant->hasGuardian() && !$separateGuardians) {
-                            BusAssignment::create([
-                                'bus_id' => $bus->id,
-                                'participant_id' => $participant->id,
-                                'is_guardian' => true,
-                                'linked_participant_id' => $participant->id,
-                            ]);
-                            $busAssignments[$bus->id]++;
-                        }
-                        break;
                     }
+                    
+                    // Assign guardian
+                    if ($hasGuardian && !$separateGuardians) {
+                        $firstChild = $children->first();
+                        BusAssignment::create([
+                            'bus_id' => $bus->id,
+                            'participant_id' => $firstChild->id,
+                            'is_guardian' => true,
+                            'linked_participant_id' => $firstChild->id,
+                        ]);
+                        $busAssignments[$bus->id]++;
+                    }
+                    break;
                 }
             }
         }
 
-        // If separating guardians (PERFORM), assign them to fill remaining capacity
+        // Step 3: Assign separated guardians (for PERFORM)
         if ($separateGuardians && $guardiansToAssignLater->isNotEmpty()) {
-            $this->assignGuardiansToFillBuses($guardiansToAssignLater, $buses, $busAssignments);
+            $this->assignSeparatedGuardians($guardiansToAssignLater, $buses, $busAssignments);
         }
     }
 
     /**
-     * Assign guardians to fill up buses to capacity (for PERFORM when separating)
+     * Group participants by their guardian.
+     * Uses phone number first (if available), otherwise guardian_name.
+     * Children without guardians are put in individual groups.
      */
-    private function assignGuardiansToFillBuses($guardians, $buses, &$busAssignments)
+    private function groupByGuardian($participants)
+    {
+        $groups = [];
+        $noGuardianIndex = 0;
+
+        foreach ($participants as $participant) {
+            if (!$participant->hasGuardian()) {
+                // No guardian - individual group
+                $key = '_no_guardian_' . ($noGuardianIndex++);
+                $groups[$key] = [
+                    'guardian_key' => $key,
+                    'has_guardian' => false,
+                    'children' => collect([$participant]),
+                ];
+            } else {
+                // Has guardian - group by phone or name
+                $key = $this->getGuardianKey($participant);
+                
+                if (!isset($groups[$key])) {
+                    $groups[$key] = [
+                        'guardian_key' => $key,
+                        'has_guardian' => true,
+                        'children' => collect(),
+                    ];
+                }
+                $groups[$key]['children']->push($participant);
+            }
+        }
+
+        // Sort groups by size (larger groups first to fill buses better)
+        usort($groups, function($a, $b) {
+            return $b['children']->count() - $a['children']->count();
+        });
+
+        return $groups;
+    }
+
+    /**
+     * Get a unique key for grouping by guardian.
+     * Priority: phone (normalized), then guardian_name (lowercase trimmed)
+     */
+    private function getGuardianKey($participant)
+    {
+        // Use phone if available
+        if (!empty($participant->phone)) {
+            // Normalize phone number
+            $phone = preg_replace('/[^0-9]/', '', $participant->phone);
+            if (!empty($phone)) {
+                return 'phone_' . $phone;
+            }
+        }
+        
+        // Fall back to guardian name
+        if (!empty($participant->guardian_name)) {
+            return 'name_' . strtolower(trim($participant->guardian_name));
+        }
+        
+        // Return participant ID if nothing else
+        return 'participant_' . $participant->id;
+    }
+
+    /**
+     * Assign separated guardians to fill up buses (for PERFORM)
+     */
+    private function assignSeparatedGuardians($guardians, $buses, &$busAssignments)
     {
         $currentBusIndex = 0;
         $busCount = $buses->count();
+        
+        // Unique guardians only (by guardian_key)
+        $uniqueGuardians = $guardians->unique('guardian_key');
 
-        foreach ($guardians as $participant) {
+        foreach ($uniqueGuardians as $guardianInfo) {
             $assigned = false;
             $attempts = 0;
 
@@ -208,14 +293,13 @@ class BusAssignmentController extends Controller
                 if ($busAssignments[$bus->id] < $bus->capacity) {
                     BusAssignment::create([
                         'bus_id' => $bus->id,
-                        'participant_id' => $participant->id,
+                        'participant_id' => $guardianInfo['first_child_id'],
                         'is_guardian' => true,
-                        'linked_participant_id' => $participant->id,
+                        'linked_participant_id' => $guardianInfo['first_child_id'],
                     ]);
                     $busAssignments[$bus->id]++;
                     $assigned = true;
 
-                    // Move to next bus if current is full
                     if ($busAssignments[$bus->id] >= $bus->capacity) {
                         $currentBusIndex = ($currentBusIndex + 1) % $busCount;
                     }
@@ -268,7 +352,6 @@ class BusAssignmentController extends Controller
     {
         $participantId = $assignment->participant_id;
         
-        // Remove both child and guardian assignments
         BusAssignment::where('participant_id', $participantId)->delete();
 
         $participant = Participant::find($participantId);
