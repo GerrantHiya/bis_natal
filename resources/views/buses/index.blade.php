@@ -47,7 +47,7 @@
                 <label for="departure_time" class="block text-sm font-medium text-gray-700 mb-2">Jam Berangkat</label>
                 <select name="departure_time" id="departure_time" required
                         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    <option value="06:00">06:00 (PERFORM)</option>
+                    <option value="06:00">06:00 (PERFORM JUNIOR)</option>
                     <option value="07:00" selected>07:00 (UMUM)</option>
                 </select>
             </div>
