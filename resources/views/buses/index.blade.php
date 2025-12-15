@@ -12,6 +12,7 @@
         </div>
     </div>
 
+    @if(auth()->user()->isAdmin())
     <!-- Default Capacity Setting -->
     <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Pengaturan Kapasitas Default</h2>
@@ -58,6 +59,7 @@
             </button>
         </form>
     </div>
+    @endif
 
     <!-- Bus List -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -93,6 +95,7 @@
                         <p class="text-xs text-gray-400 mt-1">{{ $bus->remaining_capacity }} kursi tersisa</p>
                     </div>
 
+                    @if(auth()->user()->isAdmin())
                     <!-- Edit Form -->
                     <form action="{{ route('buses.update', $bus) }}" method="POST" class="space-y-3 mb-4">
                         @csrf
@@ -110,13 +113,14 @@
                         </select>
                         <button type="submit" class="w-full btn btn-secondary text-sm">Simpan Perubahan</button>
                     </form>
+                    @endif
 
                     <!-- Actions -->
                     <div class="flex gap-2">
                         <a href="{{ route('buses.show', $bus) }}" class="flex-1 btn btn-primary text-sm">
                             Lihat Penumpang
                         </a>
-                        @if($bus->occupied_seats === 0)
+                        @if(auth()->user()->isAdmin() && $bus->occupied_seats === 0)
                             <form action="{{ route('buses.destroy', $bus) }}" method="POST" 
                                   onsubmit="return confirm('Hapus {{ $bus->name }}?')">
                                 @csrf

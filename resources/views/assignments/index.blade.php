@@ -17,6 +17,7 @@
                 </svg>
                 Export
             </a>
+            @if(auth()->user()->isAdmin())
             <form action="{{ route('assignments.reset') }}" method="POST" 
                   onsubmit="return confirm('Reset semua pengelompokan? Tindakan ini tidak dapat dibatalkan.')">
                 @csrf
@@ -27,9 +28,11 @@
                     Reset Semua
                 </button>
             </form>
+            @endif
         </div>
     </div>
 
+    @if(auth()->user()->isAdmin())
     <!-- Auto Assign Panel -->
     <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
         <div class="flex items-center justify-between">
@@ -64,6 +67,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Unassigned Participants -->
     @if($unassignedParticipants->isNotEmpty())
@@ -83,6 +87,7 @@
                         </span>
                         <span class="text-sm font-medium text-gray-700">{{ $participant->name }}</span>
                         
+                        @if(auth()->user()->isAdmin())
                         <!-- Manual Assign Dropdown -->
                         <form action="{{ route('assignments.manual') }}" method="POST" class="flex items-center gap-1">
                             @csrf
@@ -105,6 +110,7 @@
                                 </svg>
                             </button>
                         </form>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -178,6 +184,7 @@
                                             @if($hasGuardian)
                                                 <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">+Pendamping</span>
                                             @endif
+                                            @if(auth()->user()->isAdmin())
                                             <form action="{{ route('assignments.remove', $mainAssignment) }}" method="POST" class="opacity-0 group-hover:opacity-100 transition-opacity">
                                                 @csrf
                                                 @method('DELETE')
@@ -187,6 +194,7 @@
                                                     </svg>
                                                 </button>
                                             </form>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach

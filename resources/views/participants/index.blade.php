@@ -10,6 +10,7 @@
             <h1 class="text-3xl font-bold text-gray-900">Daftar Peserta</h1>
             <p class="text-gray-500 mt-1">Kelola data peserta bis Natal</p>
         </div>
+        @if(auth()->user()->isAdmin())
         <div class="flex gap-3">
             <!-- Import Button -->
             <button onclick="document.getElementById('importModal').classList.remove('hidden')" 
@@ -26,6 +27,7 @@
                 Tambah Peserta
             </a>
         </div>
+        @endif
     </div>
 
     <!-- Filters -->
@@ -68,7 +70,9 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pendamping</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No. HP</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kategori</th>
+                        @if(auth()->user()->isAdmin())
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -86,6 +90,7 @@
                                     {{ $participant->category_label }}
                                 </span>
                             </td>
+                            @if(auth()->user()->isAdmin())
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('participants.edit', $participant) }}" 
@@ -106,6 +111,7 @@
                                     </form>
                                 </div>
                             </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
