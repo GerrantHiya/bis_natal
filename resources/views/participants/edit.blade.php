@@ -57,6 +57,16 @@
                 </select>
             </div>
 
+            <div class="flex items-center gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <input type="checkbox" name="is_kiddies_prioritas" id="is_kiddies_prioritas" value="1"
+                       {{ old('is_kiddies_prioritas', $participant->is_kiddies_prioritas) ? 'checked' : '' }}
+                       class="w-5 h-5 text-amber-600 border-amber-300 rounded focus:ring-amber-500">
+                <label for="is_kiddies_prioritas" class="text-sm font-medium text-amber-800">
+                    ⭐ Kiddies Prioritas
+                    <span class="block text-xs font-normal text-amber-600">Peserta ini akan diprioritaskan dan dikelompokkan bersama di bis terdepan</span>
+                </label>
+            </div>
+
             <div class="flex gap-3 pt-4">
                 <a href="{{ route('participants.index') }}" class="btn btn-secondary flex-1">Batal</a>
                 <button type="submit" class="btn btn-primary flex-1">Simpan Perubahan</button>

@@ -66,7 +66,11 @@ class ParticipantController extends Controller
             'age' => 'nullable|integer|min:1|max:100',
             'guardian_name' => 'nullable|string|max:255',
             'category' => 'required|in:perform,umum,pribadi',
+            'is_kiddies_prioritas' => 'nullable',
         ]);
+
+        // Handle checkbox (converts to boolean)
+        $validated['is_kiddies_prioritas'] = $request->has('is_kiddies_prioritas');
 
         $oldName = $participant->name;
         $participant->update($validated);
@@ -86,6 +90,17 @@ class ParticipantController extends Controller
 
         return redirect()->route('participants.index')
             ->with('success', 'Peserta berhasil dihapus!');
+    }
+
+    public function togglePriority(Participant $participant)
+    {
+        $participant->is_kiddies_prioritas = !$participant->is_kiddies_prioritas;
+        $participant->save();
+
+        $status = $participant->is_kiddies_prioritas ? 'ditandai sebagai' : 'dihapus dari';
+        ActivityLog::log('toggle_priority', "Peserta {$participant->name} {$status} Kiddies Prioritas", $participant);
+
+        return redirect()->back()->with('success', "Status prioritas {$participant->name} berhasil diubah!");
     }
 
     public function import(Request $request)

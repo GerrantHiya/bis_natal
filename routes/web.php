@@ -30,13 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Participants
-    Route::get('/participants', [ParticipantController::class, 'index'])->name('participants.index');
-    Route::get('/participants/create', [ParticipantController::class, 'create'])->name('participants.create');
-    Route::post('/participants', [ParticipantController::class, 'store'])->name('participants.store');
-    Route::get('/participants/{participant}/edit', [ParticipantController::class, 'edit'])->name('participants.edit');
-    Route::put('/participants/{participant}', [ParticipantController::class, 'update'])->name('participants.update');
-    Route::delete('/participants/{participant}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
+    Route::resource('participants', ParticipantController::class)->except(['show']);
     Route::post('/participants/import', [ParticipantController::class, 'import'])->name('participants.import');
+    Route::post('/participants/{participant}/toggle-priority', [ParticipantController::class, 'togglePriority'])->name('participants.toggle-priority');
 
     // Buses
     Route::get('/buses', [BusController::class, 'index'])->name('buses.index');

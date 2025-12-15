@@ -73,6 +73,11 @@ class Bus extends Model
         return $query->where('departure_time', '06:00');
     }
 
+    public function scopePriority($query)
+    {
+        return $query->where('departure_time', '06:30');
+    }
+
     public function scopeRegular($query)
     {
         return $query->where('departure_time', '07:00');
@@ -80,6 +85,11 @@ class Bus extends Model
 
     public function getDepartureTimeLabelAttribute(): string
     {
-        return $this->departure_time === '06:00' ? 'Pagi (06:00) - PERFORM' : 'Reguler (07:00) - UMUM';
+        return match($this->departure_time) {
+            '06:00' => 'Pagi (06:00) - PERFORM',
+            '06:30' => 'Prioritas (06:30) - KIDDIES',
+            '07:00' => 'Reguler (07:00) - UMUM',
+            default => $this->departure_time,
+        };
     }
 }

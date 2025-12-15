@@ -42,18 +42,33 @@ class BusAssignmentController extends Controller
             
             BusAssignment::query()->delete();
 
-            $morningBuses = Bus::morning()->orderBy('name')->get();
-            $regularBuses = Bus::regular()->orderBy('name')->get();
+            $priorityBuses = Bus::priority()->orderBy('name')->get(); // 06:30 - Kiddies Prioritas
+            $morningBuses = Bus::morning()->orderBy('name')->get();   // 06:00 - PERFORM
+            $regularBuses = Bus::regular()->orderBy('name')->get();   // 07:00 - UMUM
+            $allBuses = $priorityBuses->merge($morningBuses)->merge($regularBuses);
 
             // IMPORTANT: Only include participants WITH guardian_name
             // Children without guardian cannot be assigned until guardian info is saved
+            
+            // Step 1: Get KIDDIES PRIORITAS participants (from both PERFORM and UMUM)
+            $kiddiesPrioritasParticipants = Participant::eligibleForBus()
+                ->kiddiesPrioritas()
+                ->whereNotNull('guardian_name')
+                ->where('guardian_name', '!=', '')
+                ->orderBy('name')
+                ->get();
+
+            // Step 2: Get regular PERFORM participants (non-prioritas)
             $performParticipants = Participant::perform()
+                ->nonKiddiesPrioritas()
                 ->whereNotNull('guardian_name')
                 ->where('guardian_name', '!=', '')
                 ->orderBy('name')
                 ->get();
             
+            // Step 3: Get regular UMUM participants (non-prioritas)
             $umumParticipants = Participant::umum()
+                ->nonKiddiesPrioritas()
                 ->whereNotNull('guardian_name')
                 ->where('guardian_name', '!=', '')
                 ->orderBy('name')
@@ -72,18 +87,48 @@ class BusAssignmentController extends Controller
             
             $totalSkipped = $skippedPerform + $skippedUmum;
 
-            // Group by guardian and fill buses
+            // Track bus assignments globally
+            $busAssignments = [];
+            foreach ($allBuses as $bus) {
+                $busAssignments[$bus->id] = 0;
+            }
+
+            // Collect separated guardians to assign later
+            $separatedGuardians = collect();
+
+            // PRIORITY 1: Assign KIDDIES PRIORITAS to priority buses (06:30) first, then overflow to other buses
+            // Always keep guardians together for priority kids
+            $priorityAndOtherBuses = $priorityBuses->merge($morningBuses)->merge($regularBuses);
+            $this->fillBusesWithFamilyGroups(
+                $kiddiesPrioritasParticipants,
+                $priorityAndOtherBuses,
+                false, // Never separate guardians for priority kids
+                $busAssignments,
+                $separatedGuardians
+            );
+
+            // PRIORITY 2: Group by guardian and fill morning buses with regular PERFORM children
             $this->fillBusesWithFamilyGroups(
                 $performParticipants,
                 $morningBuses,
-                $separatePerformGuardians
+                $separatePerformGuardians,
+                $busAssignments,
+                $separatedGuardians
             );
 
+            // PRIORITY 3: Group by guardian and fill regular buses with UMUM (guardians always together)
             $this->fillBusesWithFamilyGroups(
                 $umumParticipants,
                 $regularBuses,
-                false // UMUM never separate guardians
+                false, // UMUM never separate guardians
+                $busAssignments,
+                $separatedGuardians
             );
+
+            // If separating PERFORM guardians, assign them to ANY available bus (morning or regular)
+            if ($separatePerformGuardians && $separatedGuardians->isNotEmpty()) {
+                $this->assignSeparatedGuardians($separatedGuardians, $allBuses, $busAssignments);
+            }
 
             DB::commit();
 
@@ -109,8 +154,11 @@ class BusAssignmentController extends Controller
      * Group participants by guardian (using phone or guardian_name), 
      * then assign each family group to the same bus.
      * 1 guardian can have multiple children.
+     * 
+     * IMPORTANT: No force-assign - if a group doesn't fit anywhere, they stay unassigned
+     * This prevents overloading buses.
      */
-    private function fillBusesWithFamilyGroups($participants, $buses, $separateGuardians)
+    private function fillBusesWithFamilyGroups($participants, $buses, $separateGuardians, &$busAssignments, &$separatedGuardians)
     {
         if ($buses->isEmpty() || $participants->isEmpty()) return;
 
@@ -120,14 +168,6 @@ class BusAssignmentController extends Controller
 
         $currentBusIndex = 0;
         $busCount = $buses->count();
-        
-        $busAssignments = [];
-        foreach ($buses as $bus) {
-            $busAssignments[$bus->id] = 0;
-        }
-
-        // For separated guardians (PERFORM), track guardians to assign later
-        $guardiansToAssignLater = collect();
 
         // Step 2: Assign each family group to a bus
         foreach ($familyGroups as $group) {
@@ -145,9 +185,9 @@ class BusAssignmentController extends Controller
 
             // Find a bus with enough capacity
             $assigned = false;
-            $startIndex = $currentBusIndex;
+            $attempts = 0;
             
-            do {
+            while (!$assigned && $attempts < $busCount) {
                 $bus = $buses[$currentBusIndex];
                 $remainingCapacity = $bus->capacity - $busAssignments[$bus->id];
 
@@ -175,8 +215,8 @@ class BusAssignmentController extends Controller
                             ]);
                             $busAssignments[$bus->id]++;
                         } else {
-                            // Track guardian to assign later (for PERFORM)
-                            $guardiansToAssignLater->push([
+                            // Track guardian to assign later (to any available bus)
+                            $separatedGuardians->push([
                                 'guardian_key' => $guardianKey,
                                 'guardian_name' => $children->first()->guardian_name,
                                 'first_child_id' => $children->first()->id,
@@ -193,45 +233,12 @@ class BusAssignmentController extends Controller
                 } else {
                     // Move to next bus
                     $currentBusIndex = ($currentBusIndex + 1) % $busCount;
-                    
-                    if ($currentBusIndex == $startIndex) {
-                        break; // All buses checked
-                    }
                 }
-            } while (!$assigned && $currentBusIndex != $startIndex);
-
-            // Force assign if all buses are "full" but we still need to place
-            if (!$assigned) {
-                foreach ($buses as $bus) {
-                    // Assign children
-                    foreach ($children as $child) {
-                        BusAssignment::create([
-                            'bus_id' => $bus->id,
-                            'participant_id' => $child->id,
-                            'is_guardian' => false,
-                        ]);
-                        $busAssignments[$bus->id]++;
-                    }
-                    
-                    // Assign guardian
-                    if ($hasGuardian && !$separateGuardians) {
-                        $firstChild = $children->first();
-                        BusAssignment::create([
-                            'bus_id' => $bus->id,
-                            'participant_id' => $firstChild->id,
-                            'is_guardian' => true,
-                            'linked_participant_id' => $firstChild->id,
-                        ]);
-                        $busAssignments[$bus->id]++;
-                    }
-                    break;
-                }
+                $attempts++;
             }
-        }
-
-        // Step 3: Assign separated guardians (for PERFORM)
-        if ($separateGuardians && $guardiansToAssignLater->isNotEmpty()) {
-            $this->assignSeparatedGuardians($guardiansToAssignLater, $buses, $busAssignments);
+            
+            // If not assigned, the group stays unassigned (NO FORCE-ASSIGN = NO OVERLOAD)
+            // They will appear in "Peserta Belum Ditempatkan" instead
         }
     }
 

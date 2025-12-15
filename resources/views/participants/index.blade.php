@@ -71,6 +71,7 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No. HP</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kategori</th>
                         @if(auth()->user()->isAdmin())
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-amber-600 uppercase tracking-wider bg-amber-50">⭐ Prioritas</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                         @endif
                     </tr>
@@ -80,7 +81,12 @@
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $participants->firstItem() + $index }}</td>
                             <td class="px-6 py-4">
-                                <div class="font-medium text-gray-900">{{ $participant->name }}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium text-gray-900">{{ $participant->name }}</span>
+                                    @if($participant->is_kiddies_prioritas)
+                                        <span class="text-amber-500" title="Kiddies Prioritas">⭐</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $participant->age ?? '-' }} tahun</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ $participant->guardian_name ?: '-' }}</td>
@@ -91,6 +97,19 @@
                                 </span>
                             </td>
                             @if(auth()->user()->isAdmin())
+                            <td class="px-6 py-4 text-center bg-amber-50/50">
+                                <form action="{{ route('participants.toggle-priority', $participant) }}" method="POST"
+                                      onsubmit="return confirm('{{ $participant->is_kiddies_prioritas ? 'Hapus' : 'Tandai' }} {{ $participant->name }} {{ $participant->is_kiddies_prioritas ? 'dari' : 'sebagai' }} Kiddies Prioritas?')">
+                                    @csrf
+                                    <button type="submit" 
+                                            class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all border-2 
+                                                   {{ $participant->is_kiddies_prioritas 
+                                                      ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600' 
+                                                      : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200' }}">
+                                        {{ $participant->is_kiddies_prioritas ? '⭐ PRIORITAS' : '○ Biasa' }}
+                                    </button>
+                                </form>
+                            </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('participants.edit', $participant) }}" 

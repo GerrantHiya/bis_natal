@@ -18,7 +18,7 @@
                 <span class="text-4xl">🎄</span>
             </div>
             <h1 class="text-3xl font-bold text-white">Bis Natal SM</h1>
-            <p class="text-white/80 mt-2">Sekolah Minggu - Desember 2024</p>
+            <p class="text-white/80 mt-2">Sekolah Minggu - Desember 2025</p>
         </div>
 
         <!-- Login Card -->
@@ -66,7 +66,7 @@
         </div>
 
         <p class="text-center text-white/60 text-sm mt-6">
-            &copy; 2024 Bis Natal Sekolah Minggu
+            &copy; 2025 Bis Natal Sekolah Minggu
         </p>
     </div>
 </body>

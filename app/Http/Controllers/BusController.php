@@ -26,7 +26,7 @@ class BusController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1|max:100',
-            'departure_time' => 'required|in:06:00,07:00',
+            'departure_time' => 'required|in:06:00,06:30,07:00',
         ]);
 
         $bus = Bus::create($validated);
@@ -42,7 +42,7 @@ class BusController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'capacity' => 'required|integer|min:1|max:100',
-            'departure_time' => 'required|in:06:00,07:00',
+            'departure_time' => 'required|in:06:00,06:30,07:00',
         ]);
 
         $oldName = $bus->name;

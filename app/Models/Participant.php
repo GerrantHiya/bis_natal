@@ -15,10 +15,12 @@ class Participant extends Model
         'age',
         'guardian_name',
         'category',
+        'is_kiddies_prioritas',
     ];
 
     protected $casts = [
         'age' => 'integer',
+        'is_kiddies_prioritas' => 'boolean',
     ];
 
     // Relationships
@@ -65,6 +67,19 @@ class Participant extends Model
         return $query->whereIn('category', ['perform', 'umum']);
     }
 
+    public function scopeKiddiesPrioritas($query)
+    {
+        return $query->where('is_kiddies_prioritas', true);
+    }
+
+    public function scopeNonKiddiesPrioritas($query)
+    {
+        return $query->where(function($q) {
+            $q->where('is_kiddies_prioritas', false)
+              ->orWhereNull('is_kiddies_prioritas');
+        });
+    }
+
     // Helpers
     public function isPerform(): bool
     {
@@ -79,6 +94,11 @@ class Participant extends Model
     public function isPribadi(): bool
     {
         return $this->category === 'pribadi';
+    }
+
+    public function isKiddiesPrioritas(): bool
+    {
+        return (bool) $this->is_kiddies_prioritas;
     }
 
     public function hasGuardian(): bool
