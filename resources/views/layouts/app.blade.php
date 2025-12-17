@@ -72,6 +72,21 @@
             @apply bg-emerald-600 text-white hover:bg-emerald-700;
         }
     </style>
+
+    <script>
+        console.log(`
+            %cWeb ini dikembangkan oleh Gerrant Hiya
+            %cProfessional Software & IoT Developer
+            
+            %c📧 Business Email : g@ghiya.my.id
+            %c🌐 Website        : https://ghiya.my.id
+            `,
+            "font-size:14px;font-weight:bold;color:#0d6efd;",
+            "font-size:12px;color:#333;",
+            "font-size:12px;color:#444;",
+            "font-size:12px;color:#444;"
+        );
+    </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex min-h-screen">
@@ -203,5 +218,9 @@
     </div>
     
     @stack('scripts')
+
+    <footer class="text-center my-5">
+        <p>{{ date('Y') }} &copy; <a href="https://ghiya.my.id" target="_blank">Gerrant Hiya</a> | All rights reserved.</p>
+    </footer>
 </body>
 </html>

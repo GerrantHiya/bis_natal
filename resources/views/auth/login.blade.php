@@ -3,12 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Bis Natal SM</title>
+    <title>Login - Bis Natal Sekolah Minggu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
     </style>
+    <script>
+        console.log(`
+            %cWeb ini dikembangkan oleh Gerrant Hiya
+            %cProfessional Software & IoT Developer
+            
+            %c📧 Business Email : g@ghiya.my.id
+            %c🌐 Website        : https://ghiya.my.id
+            `,
+            "font-size:14px;font-weight:bold;color:#0d6efd;",
+            "font-size:12px;color:#333;",
+            "font-size:12px;color:#444;",
+            "font-size:12px;color:#444;"
+        );
+    </script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
     <div class="w-full max-w-md">
@@ -17,8 +31,8 @@
             <div class="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span class="text-4xl">🎄</span>
             </div>
-            <h1 class="text-3xl font-bold text-white">Bis Natal SM</h1>
-            <p class="text-white/80 mt-2">Sekolah Minggu - Desember 2025</p>
+            <h1 class="text-3xl font-bold text-white">Bis Natal Sekolah Minggu</h1>
+            <p class="text-white/80 mt-2">GBI HMJ Neo Soho - 20 Desember 2025</p>
         </div>
 
         <!-- Login Card -->
@@ -62,11 +76,13 @@
                 <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl">
                     Masuk
                 </button>
+
+                <small>untuk Bantuan Login, hubungi <a href="https://wa.me/6281401668149" class="text-indigo-600 hover:underline">Gerrant Hiya</a></small>
             </form>
         </div>
 
         <p class="text-center text-white/60 text-sm mt-6">
-            &copy; 2025 Bis Natal Sekolah Minggu
+            {{ date('Y') }} &copy; <a href="http://ghiya.my.id" target="_blank">Gerrant Hiya</a> | All rights reserved.
         </p>
     </div>
 </body>

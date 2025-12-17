@@ -23,6 +23,21 @@ class DashboardController extends Controller
             'unassigned_count' => Participant::eligibleForBus()
                 ->whereDoesntHave('busAssignment')
                 ->count(),
+            
+            // New stats
+            'guardian_count' => Participant::whereNotNull('phone')
+                ->where('phone', '!=', '')
+                ->distinct('phone')
+                ->count('phone'),
+            'kiddies_prioritas_count' => Participant::eligibleForBus()
+                ->kiddiesPrioritas()
+                ->count(),
+            'junior_perform_count' => Participant::perform()
+                ->nonKiddiesPrioritas()
+                ->count(),
+            'umum_biasa_count' => Participant::umum()
+                ->nonKiddiesPrioritas()
+                ->count(),
         ];
 
         $buses = Bus::withCount('assignments')
