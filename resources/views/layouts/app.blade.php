@@ -14,9 +14,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Heroicons -->
-    <script src="https://unpkg.com/@heroicons/vue@2.0.18/dist/cjs/index.min.js" defer></script>
-    
     <style>
         * { font-family: 'Inter', sans-serif; }
         
@@ -71,6 +68,15 @@
         .btn-success {
             @apply bg-emerald-600 text-white hover:bg-emerald-700;
         }
+
+        /* Mobile sidebar animation */
+        .sidebar-overlay {
+            transition: opacity 0.3s ease;
+        }
+        
+        .sidebar-panel {
+            transition: transform 0.3s ease;
+        }
     </style>
 
     <script>
@@ -89,9 +95,27 @@
     </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
+    <!-- Mobile Header -->
+    <header class="lg:hidden gradient-bg text-white px-4 py-3 flex items-center justify-between fixed top-0 left-0 right-0 z-40">
+        <div class="flex items-center gap-3">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+            </svg>
+            <span class="font-bold text-lg">Bis Natal SM</span>
+        </div>
+        <button id="mobile-menu-btn" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </header>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay fixed inset-0 bg-black/50 z-40 lg:hidden hidden" onclick="closeSidebar()"></div>
+
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 gradient-bg text-white fixed h-full">
+        <aside id="sidebar" class="sidebar-panel w-64 gradient-bg text-white fixed h-full z-50 -translate-x-full lg:translate-x-0 transition-transform">
             <div class="p-6">
                 <h1 class="text-2xl font-bold flex items-center gap-3">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,9 +126,16 @@
                 <p class="text-sm text-indigo-200 mt-1">Sekolah Minggu</p>
             </div>
             
+            <!-- Close button for mobile -->
+            <button id="close-sidebar-btn" class="lg:hidden absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors" onclick="closeSidebar()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            
             <nav class="mt-6">
                 <a href="{{ route('dashboard') }}" 
-                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('dashboard') ? 'active' : '' }}" onclick="closeSidebar()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
@@ -112,7 +143,7 @@
                 </a>
                 
                 <a href="{{ route('participants.index') }}" 
-                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('participants.*') ? 'active' : '' }}">
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('participants.*') ? 'active' : '' }}" onclick="closeSidebar()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
@@ -120,7 +151,7 @@
                 </a>
                 
                 <a href="{{ route('buses.index') }}" 
-                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('buses.*') ? 'active' : '' }}">
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('buses.*') ? 'active' : '' }}" onclick="closeSidebar()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                     </svg>
@@ -128,7 +159,7 @@
                 </a>
                 
                 <a href="{{ route('assignments.index') }}" 
-                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('assignments.*') ? 'active' : '' }}">
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('assignments.*') ? 'active' : '' }}" onclick="closeSidebar()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
@@ -137,14 +168,14 @@
 
                 @if(auth()->user()->isAdmin())
                 <a href="{{ route('logs.index') }}" 
-                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('logs.*') ? 'active' : '' }}" onclick="closeSidebar()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     Activity Log
                 </a>
                 <a href="{{ route('users.index') }}" 
-                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                   class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {{ request()->routeIs('users.*') ? 'active' : '' }}" onclick="closeSidebar()">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                     </svg>
@@ -172,7 +203,7 @@
                     </div>
                     <div class="space-y-2">
                         <a href="{{ route('password.change') }}" 
-                           class="w-full text-sm bg-white/10 hover:bg-white/20 rounded-lg py-2 transition-colors flex items-center justify-center gap-2">
+                           class="w-full text-sm bg-white/10 hover:bg-white/20 rounded-lg py-2 transition-colors flex items-center justify-center gap-2" onclick="closeSidebar()">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
                             </svg>
@@ -193,11 +224,11 @@
         </aside>
         
         <!-- Main Content -->
-        <main class="flex-1 ml-64 p-8">
+        <main class="flex-1 lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
             <!-- Flash Messages -->
             @if(session('success'))
                 <div class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg flex items-center gap-3" role="alert">
-                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <span>{{ session('success') }}</span>
@@ -206,7 +237,7 @@
             
             @if(session('error'))
                 <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3" role="alert">
-                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <span>{{ session('error') }}</span>
@@ -219,8 +250,38 @@
     
     @stack('scripts')
 
-    <footer class="text-center my-5">
-        <p>{{ date('Y') }} &copy; <a href="https://ghiya.my.id" target="_blank">Gerrant Hiya</a> | All rights reserved.</p>
+    <!-- Mobile Sidebar Script -->
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        
+        menuBtn?.addEventListener('click', function() {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        function closeSidebar() {
+            if (window.innerWidth < 1024) {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // Close sidebar on window resize to desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+
+    <footer class="lg:ml-64 text-center py-4 text-sm text-gray-500">
+        <p>{{ date('Y') }} &copy; <a href="https://ghiya.my.id" target="_blank" class="text-indigo-600 hover:underline">Gerrant Hiya</a> | All rights reserved.</p>
     </footer>
 </body>
 </html>

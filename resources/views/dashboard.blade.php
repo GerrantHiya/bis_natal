@@ -5,20 +5,28 @@
 @section('content')
 <div class="space-y-8">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p class="text-gray-500 mt-1">Ringkasan pengelompokan bis Natal Sekolah Minggu</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-500 mt-1 text-sm sm:text-base">Ringkasan pengelompokan bis Natal Sekolah Minggu</p>
         </div>
-        <a href="{{ route('assignments.index') }}" class="btn btn-primary">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-            Lihat Pengelompokan
-        </a>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <a href="{{ route('attendance.index') }}" class="btn bg-emerald-600 p-2 rounded text-white hover:bg-emerald-700 text-sm sm:text-base">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Absensi
+            </a>
+            <a href="{{ route('assignments.index') }}" class="btn btn-primary text-sm sm:text-base">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                Pengelompokan
+            </a>
+        </div>
     </div>
 
-        <!-- Detail Stats Grid -->
+    <!-- Detail Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Pendamping -->
         <div class="bg-white rounded-2xl shadow-sm p-6 card-hover border border-gray-100">

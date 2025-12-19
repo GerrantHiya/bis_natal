@@ -36,6 +36,11 @@ class BusAssignment extends Model
         return $this->belongsTo(Participant::class, 'linked_participant_id');
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
     // Helpers
     public function getDisplayNameAttribute(): string
     {

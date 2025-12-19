@@ -18,8 +18,9 @@
                 Export
             </a>
             @if(auth()->user()->isAdmin())
-            <form action="{{ route('assignments.reset') }}" method="POST" 
-                  onsubmit="return confirm('Reset semua pengelompokan? Tindakan ini tidak dapat dibatalkan.')">
+            <!-- <form action="{{ route('assignments.reset') }}" method="POST" 
+                  onsubmit="return confirm('Reset semua pengelompokan? Tindakan ini tidak dapat dibatalkan.')">  -->
+            <div hidden>
                 @csrf
                 <button type="submit" class="btn btn-danger">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,7 +28,8 @@
                     </svg>
                     Reset Semua
                 </button>
-            </form>
+            </div>
+            <!-- </form> -->
             @endif
         </div>
     </div>
@@ -40,7 +42,8 @@
                 <h2 class="text-xl font-bold mb-2">Pengelompokan Otomatis</h2>
                 <p class="text-indigo-100">Kelompokkan semua peserta secara otomatis berdasarkan kategori</p>
             </div>
-            <form action="{{ route('assignments.auto') }}" method="POST" class="flex items-center gap-4">
+            <!-- <form action="{{ route('assignments.auto') }}" method="POST" class="flex items-center gap-4"> -->
+            <div hidden>
                 @csrf
                 <label class="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 cursor-pointer hover:bg-white/20 transition-colors">
                     <input type="checkbox" name="separate_guardians" value="1" {{ $separateGuardians ? 'checked' : '' }}
@@ -53,7 +56,8 @@
                     </svg>
                     Kelompokkan Otomatis
                 </button>
-            </form>
+            </div>
+            <!-- </form> -->
         </div>
         
         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">

@@ -50,6 +50,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/assignments/reset', [BusAssignmentController::class, 'reset'])->name('assignments.reset');
     Route::get('/assignments/export', [BusAssignmentController::class, 'export'])->name('assignments.export');
 
+    // Attendance (All users)
+    Route::get('/attendance', [\App\Http\Controllers\AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/{bus}', [\App\Http\Controllers\AttendanceController::class, 'show'])->name('attendance.show');
+    Route::post('/attendance/toggle', [\App\Http\Controllers\AttendanceController::class, 'toggle'])->name('attendance.toggle');
+
     // Activity Logs (Admin only - checked in controller)
     Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
 
